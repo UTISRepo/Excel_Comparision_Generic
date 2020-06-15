@@ -18,14 +18,9 @@ public class CompareExcel {
     public static Integer index = 1;
     public static XSSFSheet sheet1;
     public static XSSFSheet sheet2;
-
-    public static void main(String[] args) {
-        try {
-            // get input excel files
-            FileInputStream excellFile1 = new FileInputStream(
-                "F:\\DataComparision\\ExcelSheet\\Source.xlsx");
-            FileInputStream excellFile2 = new FileInputStream(
-                "F:\\DataComparision\\ExcelSheet\\Target.xlsx");
+    
+    public void fileComparision(FileInputStream excellFile1,FileInputStream excellFile2) throws IOException {
+                    
 
             // Create Workbook instance holding reference to .xlsx file
             XSSFWorkbook workbook1 = new XSSFWorkbook(excellFile1);
@@ -56,119 +51,104 @@ public class CompareExcel {
             excellFile2.close();
             
             //Create work book and write the data
-            writeComparisionData();
-
-            System.out.println("Data Comparision Completed");
-            
-                    } catch (Exception e) {
-            e.printStackTrace();
-        }
+            CreateWorkBook createWorkBook = new CreateWorkBook();
+            createWorkBook.writeComparisionData(compareData1, compareData2); 
+                    
 
     }
     
-    public static void writeComparisionData() throws IOException {
-    	//Create blank workbook
-        XSSFWorkbook workbook = new XSSFWorkbook();
-
-        //Create a blank sheet
-        XSSFSheet spreadsheet1 = workbook.createSheet(" Data Mismatch ");
-        XSSFSheet spreadsheet2 = workbook.createSheet(" Data Missing ");
-
-        //Create row object
-        XSSFRow row;
-
-        //Iterate over data and write to sheet
-        Set < String > keyid1 = compareData1.keySet();
-        int rowid = 0;
-
-        for (String key: keyid1) {
-            row = spreadsheet1.createRow(rowid++);
-            Object[] objectArr = compareData1.get(key);
-            int cellid = 0;
-
-            for (Object obj: objectArr) {
-                Cell cell = row.createCell(cellid++);
-                cell.setCellValue(String.valueOf(obj));
+    public static boolean compareHeaders(XSSFSheet sheet1,XSSFSheet sheet2) {
+    	XSSFRow row1 = sheet1.getRow(0);
+    	XSSFRow row2 = sheet2.getRow(0);
+    	int firstCell1 = row1.getFirstCellNum();
+        int lastCell1 = row1.getLastCellNum();
+        int firstCell2= row2.getFirstCellNum();
+        int lastCell2 = row2.getLastCellNum();
+        boolean equalHeader=false;
+        
+        for (int i = firstCell1; i <= lastCell1; i++) {
+            XSSFCell cell1 = row1.getCell(i);
+            XSSFCell cell2 = row2.getCell(i);
+            if ((cell1 != null) && (cell2 != null)) {
+            	if (cell1.getStringCellValue().equals(cell2
+                        .getStringCellValue())) {
+                    equalHeader= true;
+                } else {
+                    equalHeader= false;
+                    System.out.println(" Source Header Name : "+ cell1.getStringCellValue() + " Target Header Name : " + cell2.getStringCellValue());
+                    
+                    }
+                
             }
+           
         }
-
-        //Iterate over data and write to sheet
-        Set < String > keyid2 = compareData2.keySet();
-        rowid = 0;
-
-        for (String key: keyid2) {
-            row = spreadsheet2.createRow(rowid++);
-            Object[] objectArr = compareData2.get(key);
-            int cellid = 0;
-
-            for (Object obj: objectArr) {
-                Cell cell = row.createCell(cellid++);
-                cell.setCellValue(String.valueOf(obj));
-            }
-        }
-        //Write the workbook in file system
-        FileOutputStream out = new FileOutputStream(new File("F:\\DataComparision\\ExcelSheet\\Writesheet.xlsx"));
-
-        workbook.write(out);
-
+        
+		return equalHeader;
 
     	
     }
 
     // Compare Two Sheets
     public static void compareTwoSheets() {
-        int firstRow1 = sheet1.getFirstRowNum();
-        int lastRow1 = sheet1.getLastRowNum();
+    	
+    	if(compareHeaders(sheet1,sheet2)){
+    		
+    		int firstRow1 = sheet1.getFirstRowNum();
+            int lastRow1 = sheet1.getLastRowNum();
 
-        int firstRow2 = sheet2.getFirstRowNum();
-        int lastRow2 = sheet2.getLastRowNum();
+            int firstRow2 = sheet2.getFirstRowNum();
+            int lastRow2 = sheet2.getLastRowNum();
 
-        
-        for (int i = firstRow1 + 1; i <= lastRow1; i++) {
-            XSSFRow row1 = sheet1.getRow(i);//2
-            if (row1 != null) {
-                Double Row1ID = row1.getCell(0).getNumericCellValue();
-                Boolean notFound = true;
-                for (int j = firstRow2 + 1; j <= lastRow2; j++) {
-                    XSSFRow row2 = sheet2.getRow(j);
-                    Double Row2ID = row2.getCell(0).getNumericCellValue();
-                    if (Row1ID.equals(Row2ID)) {
-                        notFound =false;
-                        compareTwoRows(row1, row2, i);
-                        break;
-                    } 
-                }
-                if(notFound){
-                    index++;
-                    compareData2.put(index.toString(), new Object[] {
-                        Double.toString(Row1ID), "Missing row in target"
-                    });
-                }
-            } 
-        }
-        //Checking for missing rows in sheet 1
-        for (int i = firstRow2 + 1; i <= lastRow2; i++) {
-            XSSFRow row2 = sheet2.getRow(i);//2
-            if (row2 != null) {
-                Double Row2ID = row2.getCell(0).getNumericCellValue();
-                Boolean notFound = true;
-                for (int j = firstRow1 + 1; j <= lastRow1; j++) {
-                    XSSFRow row1 = sheet1.getRow(j);
+            
+            for (int i = firstRow1 + 1; i <= lastRow1; i++) {
+                XSSFRow row1 = sheet1.getRow(i);//2
+                if (row1 != null) {
                     Double Row1ID = row1.getCell(0).getNumericCellValue();
-                    if (Row1ID.equals(Row2ID)) {
-                        notFound =false;
-                        
-                        break;
-                    } 
-                }
-                if(notFound){
-                    index++;
-                    compareData2.put(index.toString(), new Object[] {
-                        Double.toString(Row2ID), "Missing row in source"
-                    });
-                }
-            } 
-        }
+                    Boolean notFound = true;
+                    for (int j = firstRow2 + 1; j <= lastRow2; j++) {
+                        XSSFRow row2 = sheet2.getRow(j);
+                        Double Row2ID = row2.getCell(0).getNumericCellValue();
+                        if (Row1ID.equals(Row2ID)) {
+                            notFound =false;
+                            compareTwoRows(row1, row2, i);
+                            break;
+                        } 
+                    }
+                    if(notFound){
+                        index++;
+                        compareData2.put(index.toString(), new Object[] {
+                            Double.toString(Row1ID), "Missing row in target"
+                        });
+                    }
+                } 
+            }
+            //Checking for missing rows in sheet 1
+            for (int i = firstRow2 + 1; i <= lastRow2; i++) {
+                XSSFRow row2 = sheet2.getRow(i);//2
+                if (row2 != null) {
+                    Double Row2ID = row2.getCell(0).getNumericCellValue();
+                    Boolean notFound = true;
+                    for (int j = firstRow1 + 1; j <= lastRow1; j++) {
+                        XSSFRow row1 = sheet1.getRow(j);
+                        Double Row1ID = row1.getCell(0).getNumericCellValue();
+                        if (Row1ID.equals(Row2ID)) {
+                            notFound =false;
+                            
+                            break;
+                        } 
+                    }
+                    if(notFound){
+                        index++;
+                        compareData2.put(index.toString(), new Object[] {
+                            Double.toString(Row2ID), "Missing row in source"
+                        });
+                    }
+                } 
+            }
+    	}else {
+    		System.out.println("Column headers are not equal");
+    	}
+        
     }
 
     // Compare Two Rows column
